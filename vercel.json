@@ -1,7 +1,11 @@
 {
   "rewrites": [
+    { "source": "/api/users/auth/2fa/:a", "destination": "/api/auth?r=2fa&a=:a" },
     { "source": "/api/users/auth/:a", "destination": "/api/auth?a=:a" },
     { "source": "/api/users/actions/:a", "destination": "/api/key?a=:a" },
+    { "source": "/api/admin/users/resetHardwareId", "destination": "/api/key?a=userResetHwid" },
+    { "source": "/api/email/setup", "destination": "/api/key?a=emailSetup" },
+    { "source": "/api/user/subscriptions/getAdditionalSubscriptions", "destination": "/api/pay?r=subs&a=getAdditional" },
     { "source": "/api/friends/:a", "destination": "/api/friends?a=:a" },
     { "source": "/api/payments/additional/:a", "destination": "/api/pay?r=additional&a=:a" },
     { "source": "/api/payments/frontend/:a", "destination": "/api/pay?r=frontend&a=:a" },

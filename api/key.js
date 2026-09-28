@@ -1,16 +1,18 @@
 // Consolidated user-actions handler:
-//   /api/users/actions/:a  ->  /api/key?a=:a   (a = activateDigitalKey)
+//   /api/users/actions/:a            ->  /api/key?a=:a   (activateDigitalKey|emailSetup)
+//   /api/admin/users/resetHardwareId  ->  /api/key?a=userResetHwid  (buyer self-reset)
+//   /api/email/setup                  ->  /api/key?a=emailSetup
 const { sb } = require("../lib/sb");
 
 async function activateDigitalKey(req, res) {
   try {
     const { token, key } = req.query;
-    if (!token || !key) return res.status(400).send("The entered key is invalid.");
+    if (!token || !key) return res.status(400).send("Kiritilgan kalit noto'g'ri.");
     const s = await sb("/rest/v1/web_sessions?select=user_id&token=eq." + encodeURIComponent(token));
-    if (!s.length) return res.status(400).send("The entered key is invalid.");
+    if (!s.length) return res.status(400).send("Kiritilgan kalit noto'g'ri.");
     const uid = s[0].user_id;
     const keys = await sb("/rest/v1/sub_keys?select=id,days,used&value=eq." + encodeURIComponent(key));
-    if (!keys.length || keys[0].used) return res.status(400).send("The entered key is invalid or already used.");
+    if (!keys.length || keys[0].used) return res.status(400).send("Kiritilgan kalit noto'g'ri yoki allaqachon ishlatilgan.");
     const k = keys[0];
     const prof = await sb("/rest/v1/profiles?select=id,sub_until&id=eq." + uid);
     let base = new Date();
@@ -24,13 +26,32 @@ async function activateDigitalKey(req, res) {
       method: "PATCH",
       body: JSON.stringify({ used: true, used_by: uid, used_at: new Date().toISOString() }),
     });
-    return res.status(200).send("Key activated: +" + k.days + " days.");
+    return res.status(200).send("Kalit faollashtirildi: +" + k.days + " kun.");
   } catch (e) {
-    return res.status(400).send("The entered key is invalid.");
+    return res.status(400).send("Kiritilgan kalit noto'g'ri.");
+  }
+}
+
+// Buyer self HWID reset. Always 200+{message} so the cabinet toast logic works:
+// failure messages contain "topilmadi", success does not.
+async function userResetHwid(req, res) {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(200).json({ message: "Sessiya topilmadi." });
+    const s = await sb("/rest/v1/web_sessions?select=user_id&token=eq." + encodeURIComponent(token));
+    if (!s.length) return res.status(200).json({ message: "Sessiya topilmadi." });
+    const prof = await sb("/rest/v1/profiles?select=id,hwid&id=eq." + s[0].user_id);
+    if (!prof.length || !prof[0].hwid) return res.status(200).json({ message: "HWID bog'lanishi topilmadi." });
+    await sb("/rest/v1/profiles?id=eq." + s[0].user_id, { method: "PATCH", body: JSON.stringify({ hwid: null }) });
+    return res.status(200).json({ message: "HWID muvaffaqiyatli tiklandi." });
+  } catch (e) {
+    return res.status(200).json({ message: "HWID bog'lanishi topilmadi." });
   }
 }
 
 module.exports = async (req, res) => {
   if (req.query.a === "activateDigitalKey") return activateDigitalKey(req, res);
+  if (req.query.a === "userResetHwid") return userResetHwid(req, res);
+  if (req.query.a === "emailSetup") return res.status(400).send("Hozircha emailni o'zgartirib bo'lmaydi.");
   return res.status(404).send("Not found.");
 };

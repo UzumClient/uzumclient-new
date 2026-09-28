@@ -27,11 +27,15 @@ async function getMethods(req, res) {
     const { token } = req.query;
     if (!token) return res.status(200).json(METHODS);
     const rows = await sb("/rest/v1/web_sessions?select=user_id&token=eq." + encodeURIComponent(token));
-    if (!rows.length) return res.status(400).send("Session expired.");
+    if (!rows.length) return res.status(400).send("Sessiya muddati tugagan.");
     return res.status(200).json(METHODS);
   } catch (e) {
-    return res.status(400).send("Failed.");
+    return res.status(400).send("Xatolik.");
   }
+}
+
+async function subsGetAdditional(req, res) {
+  return res.status(200).json([]);
 }
 
 async function additionalGetAll(req, res) {
@@ -49,11 +53,11 @@ async function sessionUser(token) {
 async function frontendCreate(req, res) {
   try {
     const { token, id, paymentType, promoCode, inputBoxEmail } = req.query;
-    if (!token) return res.status(400).send("Session expired.");
+    if (!token) return res.status(400).send("Sessiya muddati tugagan.");
     const u = await sessionUser(token);
-    if (!u) return res.status(400).send("Session expired.");
+    if (!u) return res.status(400).send("Sessiya muddati tugagan.");
     const t = tariffByType(id);
-    if (!t) return res.status(400).send("Unknown product.");
+    if (!t) return res.status(400).send("Noma'lum mahsulot.");
     let price = t.price;
     let promoTxt = "";
     if (promoCode) {
@@ -71,7 +75,7 @@ async function frontendCreate(req, res) {
     const msg = "Assalomu alaykum! UZUM CLIENT sotib olmoqchiman." + " Tarif: " + t.plan + " (" + price + ")." + promoTxt + " Email: " + u.email;
     return res.status(200).send("https://t.me/UZUMCLIENTSUPPORT?text=" + encodeURIComponent(msg));
   } catch (e) {
-    return res.status(400).send("Create payment failed.");
+    return res.status(400).send("To'lov yaratishda xatolik.");
   }
 }
 
@@ -87,7 +91,7 @@ async function promoApply(req, res) {
     if ((p.outActive != null && p.outActive <= 0) || (p.outDate && new Date(p.outDate) <= new Date())) {
       return res.status(404).send("PROMO_CODE_NOT_FOUND");
     }
-    return res.status(200).send("Promocode applied: -" + (p.discount || 0) + "%.");
+    return res.status(200).send("Promokod qo'llanildi: -" + (p.discount || 0) + "%.");
   } catch (e) {
     return res.status(404).send("PROMO_CODE_NOT_FOUND");
   }
@@ -101,5 +105,6 @@ module.exports = async (req, res) => {
   if (r === "additional" && a === "getAll") return additionalGetAll(req, res);
   if (r === "frontend" && a === "create") return frontendCreate(req, res);
   if (r === "promocodes" && a === "apply") return promoApply(req, res);
+  if (r === "subs" && a === "getAdditional") return subsGetAdditional(req, res);
   return res.status(404).send("Not found.");
 };
