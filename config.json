@@ -1,22 +1,20 @@
 {
-	"shortClientName": "Catlavan",
-	"clientName": "CATLAVAN",
+	"shortClientName": "Uzum",
+	"clientName": "UZUM CLIENT",
 	"version": "1.21.4",
-	"supportEmail": "support@sk3dcoin.art",
-	"url": "catlavan.net",
+	"supportEmail": "allambergenovaumida3103@gmail.com",
+	"url": "uzumclient-new.vercel.app",
 	"ajaxUrl": "https://uzumclient-new.vercel.app/api/",
-	"funpayLink": "https://funpay.com/users/9409827/",
-	"turnStileSiteKey": "0x4AAAAAACJBd3RlH8e24TIf",
-	"clientColor": "#aeb9d6",
-
+	"funpayLink": "https://t.me/UZUMCLIENTSUPPORT",
+	"turnStileSiteKey": "",
+	"clientColor": "#a855f7",
 	"socials": {
 		"discord": "https://t.me/UZUMCLIENTSUPPORT",
 		"telegram": "https://t.me/UZUMCLIENT"
 	},
-
 	"media": {
-		"first": "https://www.youtube.com/embed/7pVO6hDUI20?si=3TEWSRvBug2uUrsd",
-		"two": "https://www.youtube.com/embed/kilA8IDT-ZU?si=_UWeusx866Ca_inq",
-		"three": "https://www.youtube.com/embed/8bnxTXre-yk?si=mYqnvRQek18nijCR"
+		"first": "https://www.youtube.com/embed/Dd2xQ-wXOmk",
+		"two": "https://www.youtube.com/embed/Dd2xQ-wXOmk",
+		"three": "https://www.youtube.com/embed/Dd2xQ-wXOmk"
   	}
 }
