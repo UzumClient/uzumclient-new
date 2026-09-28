@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/api/users/auth/:a", "destination": "/api/auth?a=:a" },
+    { "source": "/api/users/actions/:a", "destination": "/api/key?a=:a" },
+    { "source": "/api/friends/:a", "destination": "/api/friends?a=:a" },
+    { "source": "/api/payments/additional/:a", "destination": "/api/pay?r=additional&a=:a" },
+    { "source": "/api/payments/frontend/:a", "destination": "/api/pay?r=frontend&a=:a" },
+    { "source": "/api/payments/promocodes/:a", "destination": "/api/pay?r=promocodes&a=:a" },
+    { "source": "/api/payments/:a", "destination": "/api/pay?a=:a" }
+  ]
+}
