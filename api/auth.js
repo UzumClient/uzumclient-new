@@ -122,6 +122,7 @@ module.exports = async (req, res) => {
   const r = req.query.r || "";
   const a = req.query.a;
   if (r === "2fa") return res.status(400).send("Autentifikator tez orada ishga tushadi.");
+  if (r === "state") return res.status(200).send("OK");
   if (a === "default") return login(req, res);
   if (a === "session") return session(req, res);
   if (a === "logout") return logout(req, res);
