@@ -106,5 +106,22 @@ module.exports = async (req, res) => {
   if (r === "frontend" && a === "create") return frontendCreate(req, res);
   if (r === "promocodes" && a === "apply") return promoApply(req, res);
   if (r === "subs" && a === "getAdditional") return subsGetAdditional(req, res);
+  if (!r && a === "diag") {
+    try {
+      const out = { q: req.query, host: (process.env.SUPABASE_URL || "").replace(/^https?:\/\//, "").split(".")[0] };
+      try {
+        const s = await sb("/rest/v1/web_sessions?select=user_id&token=eq." + encodeURIComponent(req.query.token || ""));
+        out.sType = Array.isArray(s) ? "arr" : typeof s;
+        out.sLen = s && s.length;
+      } catch (e) { out.sErr = e.status || String(e).slice(0, 60); }
+      try {
+        const pr = await sb("/rest/v1/promos?select=value,discount&value=eq." + encodeURIComponent(req.query.code || ""));
+        out.prType = Array.isArray(pr) ? "arr" : typeof pr;
+        out.prLen = pr && pr.length;
+        out.pr0 = pr && pr[0];
+      } catch (e) { out.prErr = e.status || String(e).slice(0, 60); }
+      return res.status(200).json(out);
+    } catch (e) { return res.status(200).json({ derr: String(e).slice(0, 80) }); }
+  }
   return res.status(404).send("Not found.");
 };
