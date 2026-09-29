@@ -158,10 +158,17 @@ function promoRow(p) {
 }
 
 async function promosGetAll(res) {
-  const rows = await sb("/rest/v1/promos?select=value,discount,maxUsages,outActive&order=value&limit=200");
-  const out = {};
-  rows.forEach((p) => { out[p.value] = promoRow(p); });
-  return res.status(200).json(out);
+  try {
+    const rows = await sb("/rest/v1/promos?select=value,discount,outActive,outDate&limit=200");
+    const out = {};
+    rows.forEach((p) => {
+      const nm = p.value;
+      out[nm] = { name: nm, discount: p.discount || 0, activations: 0, maxActivations: "-" };
+    });
+    return res.status(200).json(out);
+  } catch (e) {
+    return res.status(200).json({});
+  }
 }
 
 async function promosGet(q, res) {
