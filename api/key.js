@@ -53,5 +53,34 @@ module.exports = async (req, res) => {
   if (req.query.a === "activateDigitalKey") return activateDigitalKey(req, res);
   if (req.query.a === "userResetHwid") return userResetHwid(req, res);
   if (req.query.a === "emailSetup") return res.status(400).send("Hozircha emailni o'zgartirib bo'lmaydi.");
+  if (req.query.a === "changePassword") return changePassword(req, res);
   return res.status(404).send("Not found.");
 };
+
+async function changePassword(req, res) {
+  try {
+    const { token, oldPassword, newPassword } = req.query;
+    if (!token || !oldPassword || !newPassword) {
+      return res.status(400).send("Iltimos, ikkala maydonni to'ldiring!");
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).send("Yangi parol kamida 6 belgidan iborat bo'lishi kerak!");
+    }
+    const s = await sb("/rest/v1/web_sessions?select=user_id&token=eq." + encodeURIComponent(token));
+    if (!s.length) return res.status(400).send("Sessiya muddati tugagan.");
+    const uid = s[0].user_id;
+    const prof = await sb("/rest/v1/profiles?select=id,email&id=eq." + uid);
+    if (!prof.length) return res.status(400).send("Foydalanuvchi topilmadi.");
+    try {
+      await sb("/auth/v1/token?grant_type=password",
+        { method: "POST", body: JSON.stringify({ email: prof[0].email, password: oldPassword }) }, true);
+    } catch (e) {
+      return res.status(400).send("Eski parol noto'g'ri.");
+    }
+    await sb("/auth/v1/admin/users/" + uid, { method: "PUT", body: JSON.stringify({ password: newPassword }) });
+    await sb("/rest/v1/web_sessions?user_id=eq." + uid, { method: "DELETE" });
+    return res.status(200).send("Parol o'zgartirildi.");
+  } catch (e) {
+    return res.status(400).send("Parolni o'zgartirishda xatolik.");
+  }
+}
