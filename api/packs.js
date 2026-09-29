@@ -41,7 +41,7 @@ async function presign(req, res) {
     });
     const b = await r.json();
     if (!r.ok || !b.url) throw new Error("presign");
-    out[n] = { put: SB + b.url, path };
+    out[n] = { put: SB + "/storage/v1" + b.url, path };
   }
   return res.status(200).json({ urls: out });
 }
