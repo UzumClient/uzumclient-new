@@ -80,6 +80,9 @@ async function register(req, res) {
   try {
     const { username, password, email } = req.query;
     if (!username || !password || !email) return res.status(400).send("Majburiy maydonlar to'ldirilmagan.");
+    if (username.includes("@") || username.toLowerCase() === email.toLowerCase()) {
+      return res.status(400).send("Taxallus email bo'lishi mumkin emas.");
+    }
     let u;
     try {
       u = await sb("/auth/v1/admin/users", {
