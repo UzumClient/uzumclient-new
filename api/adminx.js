@@ -1,12 +1,12 @@
 // Admin API. Rewrite: /api/admin/:path* -> /api/adminx?path=:path*
 // Hamma endpoint admin huquqni talab qiladi (profiles.role = ADMIN).
 const { sb } = require("../lib/sb");
-const { fmtDate } = require("../lib/user");
+const { fmtDate, fmtSub } = require("../lib/user");
 
 const PAGE = 10;
 
 function fmt(iso) {
-  return fmtDate(iso);
+  return fmtSub(iso);
 }
 
 function groupOf(role) {
