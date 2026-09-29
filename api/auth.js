@@ -37,6 +37,7 @@ async function login(req, res) {
     if (!s.user) return res.status(400).send("Login yoki parol noto'g'ri.");
     const rows = await sb("/rest/v1/profiles?select=id,seq,username,email,role,sub_until,hwid,banned_hwid,created_at&id=eq." + s.user.id);
     if (!rows.length) return res.status(400).send("Login yoki parol noto'g'ri.");
+    if (rows[0].banned_hwid) return res.status(400).send("Akkount bloklangan.");
     const sess = await sb("/rest/v1/web_sessions", {
       method: "POST",
       headers: { Prefer: "return=representation" },
@@ -58,6 +59,7 @@ async function session(req, res) {
       "/rest/v1/web_sessions?select=user_id,profiles(id,seq,username,email,role,sub_until,hwid,banned_hwid,created_at)&token=eq." + encodeURIComponent(token)
     );
     if (!rows.length || !rows[0].profiles) return res.status(400).send("Sessiya muddati tugagan.");
+    if (rows[0].profiles.banned_hwid) return res.status(400).send("Akkount bloklangan.");
     return res.status(200).json(userJson(rows[0].profiles, token));
   } catch (e) {
     return res.status(400).send("Sessiya muddati tugagan.");

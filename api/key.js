@@ -32,18 +32,32 @@ async function activateDigitalKey(req, res) {
   }
 }
 
-// Buyer self HWID reset. Always 200+{message} so the cabinet toast logic works:
+// Buyer self HWID reset + admin reset of another user (?user=, admin only).
+// Always 200+{message} so the cabinet toast logic works:
 // failure messages contain "topilmadi", success does not.
 async function userResetHwid(req, res) {
   try {
-    const { token } = req.query;
+    const { token, user } = req.query;
     if (!token) return res.status(200).json({ message: "Sessiya topilmadi." });
     const s = await sb("/rest/v1/web_sessions?select=user_id&token=eq." + encodeURIComponent(token));
     if (!s.length) return res.status(200).json({ message: "Sessiya topilmadi." });
-    const prof = await sb("/rest/v1/profiles?select=id,hwid&id=eq." + s[0].user_id);
+    let targetId = s[0].user_id;
+    if (user) {
+      const me = await sb("/rest/v1/profiles?select=username,role&id=eq." + s[0].user_id);
+      if (!me.length) return res.status(200).json({ message: "Sessiya topilmadi." });
+      if (me[0].username !== user && me[0].role !== "ADMIN") {
+        return res.status(200).json({ message: "Ruxsat topilmadi." });
+      }
+      if (me[0].username !== user) {
+        const byName = await sb("/rest/v1/profiles?select=id&username=eq." + encodeURIComponent(user));
+        if (!byName.length) return res.status(200).json({ message: "Foydalanuvchi topilmadi." });
+        targetId = byName[0].id;
+      }
+    }
+    const prof = await sb("/rest/v1/profiles?select=id,hwid&id=eq." + targetId);
     if (!prof.length || !prof[0].hwid) return res.status(200).json({ message: "HWID bog'lanishi topilmadi." });
-    await sb("/rest/v1/profiles?id=eq." + s[0].user_id, { method: "PATCH", body: JSON.stringify({ hwid: null }) });
-    return res.status(200).json({ message: "HWID muvaffaqiyatli tiklandi." });
+    await sb("/rest/v1/profiles?id=eq." + targetId, { method: "PATCH", body: JSON.stringify({ hwid: null }) });
+    return res.status(200).json({ message: user ? "HWID tiklandi." : "HWID muvaffaqiyatli tiklandi." });
   } catch (e) {
     return res.status(200).json({ message: "HWID bog'lanishi topilmadi." });
   }
