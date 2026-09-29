@@ -235,6 +235,20 @@ module.exports = async (req, res) => {
     if (!me) return res.status(403).send("Ruxsat yo'q.");
   }
   try {
+    if (path === "dbg") {
+      const o = { q: req.query };
+      try {
+        const r = await sb("/rest/v1/promos?select=value&limit=1");
+        o.ok = true;
+        o.type = Array.isArray(r) ? "arr" : typeof r;
+        o.len = r && r.length;
+      } catch (e) {
+        o.ok = false;
+        o.st = e.status;
+        o.msg = String((e.body && (e.body.message || e.body.msg)) || e.message || e).slice(0, 200);
+      }
+      return res.status(200).json(o);
+    }
     if (path === "states/isSessionInitialized") return res.status(200).send("OK");
     if (path === "users/getAll") return usersGetAll(q, res);
     if (path === "users/search") return usersSearch(q, res);
