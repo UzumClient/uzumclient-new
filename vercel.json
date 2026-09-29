@@ -34,6 +34,7 @@
     { "source": "/api/admin/autoload/getVersions", "destination": "/api/adminx?p=autoload/getVersions" },
     { "source": "/api/admin/autoload/getLogs", "destination": "/api/adminx?p=autoload/getLogs" },
     { "source": "/api/admin/autoload/uploadVersion", "destination": "/api/adminx?p=autoload/uploadVersion" },
+    { "source": "/api/resources/downloadLauncher", "destination": "/api/dl" },
     { "source": "/api/email/setup", "destination": "/api/key?a=emailSetup" },
     { "source": "/api/user/subscriptions/getAdditionalSubscriptions", "destination": "/api/pay?r=subs&a=getAdditional" },
     { "source": "/api/friends/:a", "destination": "/api/friends?a=:a" },
