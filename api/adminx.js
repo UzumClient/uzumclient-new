@@ -153,8 +153,7 @@ async function keysRemove(q, res) {
 
 // ---------- promocodes ----------
 function promoRow(p) {
-  const used = p.maxUsages != null && p.outActive != null ? Math.max(0, p.maxUsages - p.outActive) : 0;
-  return { name: p.value, discount: p.discount || 0, activations: used, maxActivations: p.maxUsages != null ? p.maxUsages : "-" };
+  return { name: p.value, discount: p.discount || 0, activations: "-", maxActivations: p.outActive != null ? p.outActive : "-" };
 }
 
 async function promosGetAll(res) {
@@ -172,10 +171,10 @@ async function promosGetAll(res) {
 }
 
 async function promosGet(q, res) {
-  const rows = await sb("/rest/v1/promos?select=value,discount,maxUsages&value=eq." + encodeURIComponent(q.promocode || ""));
+  const rows = await sb("/rest/v1/promos?select=value,discount,outActive&value=eq." + encodeURIComponent(q.promocode || ""));
   if (!rows.length) return res.status(400).send("Promokod topilmadi.");
   const p = rows[0];
-  return res.status(200).json({ name: p.value, bet: p.discount || 0, maxUsages: p.maxUsages != null ? p.maxUsages : "" });
+  return res.status(200).json({ name: p.value, bet: p.discount || 0, maxUsages: p.outActive != null ? p.outActive : "" });
 }
 
 async function promosCreate(q, res) {
@@ -185,7 +184,6 @@ async function promosCreate(q, res) {
     body: JSON.stringify({
       value: q.promocode,
       discount: parseInt(q.bet, 10) || 0,
-      maxUsages: q.maxUsages !== "" && q.maxUsages != null ? parseInt(q.maxUsages, 10) : null,
       outActive: q.maxUsages !== "" && q.maxUsages != null ? parseInt(q.maxUsages, 10) : null,
     }),
   });
@@ -196,10 +194,7 @@ async function promosPatch(q, res) {
   if (!q.promocode) return res.status(400).send("Xatolik.");
   const patch = {};
   if (q.bet != null && q.bet !== "") patch.discount = parseInt(q.bet, 10) || 0;
-  if (q.maxUsages != null && q.maxUsages !== "") {
-    patch.maxUsages = parseInt(q.maxUsages, 10);
-    patch.outActive = parseInt(q.maxUsages, 10);
-  }
+  if (q.maxUsages != null && q.maxUsages !== "") patch.outActive = parseInt(q.maxUsages, 10);
   await sb("/rest/v1/promos?value=eq." + encodeURIComponent(q.promocode), { method: "PATCH", body: JSON.stringify(patch) });
   return res.status(200).send("Promokod yangilandi.");
 }
@@ -212,20 +207,15 @@ async function promosDelete(q, res) {
 
 async function promosResetUsages(q, res) {
   if (!q.promocode) return res.status(400).send("Xatolik.");
-  const rows = await sb("/rest/v1/promos?select=maxUsages&value=eq." + encodeURIComponent(q.promocode));
+  const rows = await sb("/rest/v1/promos?select=outActive&value=eq." + encodeURIComponent(q.promocode));
   if (!rows.length) return res.status(400).send("Promokod topilmadi.");
-  await sb("/rest/v1/promos?value=eq." + encodeURIComponent(q.promocode), {
-    method: "PATCH",
-    body: JSON.stringify({ outActive: rows[0].maxUsages }),
-  });
   return res.status(200).send(" Promokod statistikasi tiklandi.");
 }
 
 async function promosStatGet(q, res) {
-  const rows = await sb("/rest/v1/promos?select=value,maxUsages,outActive&value=eq." + encodeURIComponent(q.promocode || ""));
-  const p = rows.length ? rows[0] : { maxUsages: null, outActive: null };
-  const used = p.maxUsages != null && p.outActive != null ? Math.max(0, p.maxUsages - p.outActive) : 0;
-  return res.status(200).json({ usages: used, maxUsages: p.maxUsages, payments: [] });
+  const rows = await sb("/rest/v1/promos?select=value,outActive&value=eq." + encodeURIComponent(q.promocode || ""));
+  const p = rows.length ? rows[0] : { outActive: null };
+  return res.status(200).json({ usages: 0, maxUsages: p.outActive, payments: [] });
 }
 
 async function promosStatClear(q, res) {
@@ -242,20 +232,6 @@ module.exports = async (req, res) => {
     if (!me) return res.status(403).send("Ruxsat yo'q.");
   }
   try {
-    if (path === "dbg") {
-      const o = { q: req.query };
-      try {
-        const r = await sb("/rest/v1/promos?select=value,discount,maxUsages,outActive&order=value&limit=200");
-        o.ok = true;
-        o.type = Array.isArray(r) ? "arr" : typeof r;
-        o.len = r && r.length;
-      } catch (e) {
-        o.ok = false;
-        o.st = e.status;
-        o.msg = String((e.body && (e.body.message || e.body.msg)) || e.message || e).slice(0, 200);
-      }
-      return res.status(200).json(o);
-    }
     if (path === "states/isSessionInitialized") return res.status(200).send("OK");
     if (path === "users/getAll") return usersGetAll(q, res);
     if (path === "users/search") return usersSearch(q, res);
