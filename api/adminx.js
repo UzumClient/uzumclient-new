@@ -238,7 +238,7 @@ module.exports = async (req, res) => {
     if (path === "dbg") {
       const o = { q: req.query };
       try {
-        const r = await sb("/rest/v1/promos?select=value&limit=1");
+        const r = await sb("/rest/v1/promos?select=value,discount,maxUsages,outActive&order=value&limit=200");
         o.ok = true;
         o.type = Array.isArray(r) ? "arr" : typeof r;
         o.len = r && r.length;
