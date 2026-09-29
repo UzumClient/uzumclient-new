@@ -41,6 +41,7 @@
     { "source": "/api/payments/additional/:a", "destination": "/api/pay?r=additional&a=:a" },
     { "source": "/api/payments/frontend/:a", "destination": "/api/pay?r=frontend&a=:a" },
     { "source": "/api/payments/promocodes/:a", "destination": "/api/pay?r=promocodes&a=:a" },
-    { "source": "/api/payments/:a", "destination": "/api/pay?a=:a" }
+    { "source": "/api/payments/:a", "destination": "/api/pay?a=:a" },
+    { "source": "/((?!api/|assets/|config\\.json|favicon\\.svg|icon\\.png|icon\\.svg).*)", "destination": "/index.html" }
   ]
 }
