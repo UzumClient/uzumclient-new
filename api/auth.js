@@ -80,8 +80,14 @@ async function register(req, res) {
   try {
     const { username, password, email } = req.query;
     if (!username || !password || !email) return res.status(400).send("Majburiy maydonlar to'ldirilmagan.");
+    if (!/^[^@\s]+@gmail\.com$/i.test(email)) {
+      return res.status(400).send("Faqat @gmail.com email bilan ro'yxatdan o'tish mumkin.");
+    }
     if (username.includes("@") || username.toLowerCase() === email.toLowerCase()) {
       return res.status(400).send("Taxallus email bo'lishi mumkin emas.");
+    }
+    if (!/^[A-Za-z][A-Za-z0-9_.-]{2,19}$/.test(username)) {
+      return res.status(400).send("Taxallus noto'g'ri: lotin harfi bilan boshlansin, 3-20 belgi, bo'sh joy va belgilarsiz.");
     }
     let u;
     try {
