@@ -45,20 +45,16 @@ async function profByUsername(username) {
 
 // ---------- users ----------
 async function usersGetAll(q, res) {
-  const page = Math.max(0, parseInt(q.page, 10) || 0);
   const all = await sb("/rest/v1/profiles?select=id,seq,username,email,role,sub_until&order=seq");
-  const total = Math.max(1, Math.ceil(all.length / PAGE));
-  return res.status(200).json({ content: all.slice(page * PAGE, page * PAGE + PAGE).map(userRow), total });
+  return res.status(200).json({ content: all.map(userRow), total: 1 });
 }
 
 async function usersSearch(q, res) {
-  const page = Math.max(0, parseInt(q.page, 10) || 0);
   const like = encodeURIComponent("*" + (q.query || "") + "*");
   const all = await sb(
     "/rest/v1/profiles?select=id,seq,username,email,role,sub_until&or=(username.ilike." + like + ",email.ilike." + like + ")&order=seq"
   );
-  const total = Math.max(1, Math.ceil(all.length / PAGE));
-  return res.status(200).json({ content: all.slice(page * PAGE, page * PAGE + PAGE).map(userRow), total });
+  return res.status(200).json({ content: all.map(userRow), total: 1 });
 }
 
 async function usersGetById(q, res) {
