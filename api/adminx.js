@@ -34,6 +34,8 @@ function userRow(p) {
     user: p.username,
     email: p.email,
     subtill: fmt(p.sub_until),
+    regdate: fmtDate(p.created_at),
+    hwid: p.hwid || "-",
     group: groupOf(p.role),
   };
 }
@@ -45,14 +47,14 @@ async function profByUsername(username) {
 
 // ---------- users ----------
 async function usersGetAll(q, res) {
-  const all = await sb("/rest/v1/profiles?select=id,seq,username,email,role,sub_until&order=seq");
+  const all = await sb("/rest/v1/profiles?select=id,seq,username,email,role,sub_until,created_at,hwid&order=seq");
   return res.status(200).json({ content: all.map(userRow), total: 1 });
 }
 
 async function usersSearch(q, res) {
   const like = encodeURIComponent("*" + (q.query || "") + "*");
   const all = await sb(
-    "/rest/v1/profiles?select=id,seq,username,email,role,sub_until&or=(username.ilike." + like + ",email.ilike." + like + ")&order=seq"
+    "/rest/v1/profiles?select=id,seq,username,email,role,sub_until,created_at,hwid&or=(username.ilike." + like + ",email.ilike." + like + ")&order=seq"
   );
   return res.status(200).json({ content: all.map(userRow), total: 1 });
 }
@@ -147,6 +149,32 @@ async function keysRemove(q, res) {
   return res.status(200).send("Kalit o'chirildi.");
 }
 
+function genKey() {
+  const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "UZUM-";
+  for (let i = 0; i < 12; i++) {
+    s += abc[Math.floor(Math.random() * abc.length)];
+    if (i === 3 || i === 7) s += "-";
+  }
+  return s;
+}
+
+async function keysCreate(q, res, days) {
+  const count = Math.min(100, Math.max(0, parseInt(q.count, 10) || 0));
+  if (!count) return res.status(400).send("Soni noto'g'ri.");
+  const ex = await sb("/rest/v1/sub_keys?select=value&limit=2000");
+  const have = new Set(ex.map((k) => k.value));
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    let v = genKey();
+    while (have.has(v)) v = genKey();
+    have.add(v);
+    await sb("/rest/v1/sub_keys", { method: "POST", body: JSON.stringify({ value: v, days: days, used: false }) });
+    out.push(v);
+  }
+  return res.status(200).send(out.join(" "));
+}
+
 // ---------- promocodes ----------
 function promoRow(p) {
   return { name: p.value, discount: p.discount || 0, activations: "-", maxActivations: p.outActive != null ? p.outActive : "-" };
@@ -236,6 +264,10 @@ module.exports = async (req, res) => {
     if (path === "multiactions/keys/action/getAll") return keysGetAll(res);
     if (path === "multiactions/keys/action/remove") return keysRemove(q, res);
     if (path === "multiactions/keys/getAdditionalProducts") return res.status(200).json([]);
+    if (path === "multiactions/keys/subscription") return keysCreate(q, res, Math.max(0, parseInt(q.days, 10) || 0));
+    if (path === "multiactions/keys/hardwareReset") return keysCreate(q, res, 0);
+    if (path === "multiactions/keys/beta") return keysCreate(q, res, 36500);
+    if (path === "multiactions/keys/additionalProduct") return keysCreate(q, res, 30);
     if (path === "promocodes/getAll") return promosGetAll(res);
     if (path === "promocodes/get") return promosGet(q, res);
     if (path === "promocodes/create") return promosCreate(q, res);
