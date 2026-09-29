@@ -48,6 +48,7 @@ async function profByUsername(username) {
 // ---------- users ----------
 async function usersGetAll(q, res) {
   const all = await sb("/rest/v1/profiles?select=id,seq,username,email,role,sub_until,created_at,hwid&order=seq");
+  all.sort((a, b) => (a.role === "ADMIN" ? 0 : 1) - (b.role === "ADMIN" ? 0 : 1) || (a.seq || 0) - (b.seq || 0));
   return res.status(200).json({ content: all.map(userRow), total: 1 });
 }
 
@@ -56,6 +57,7 @@ async function usersSearch(q, res) {
   const all = await sb(
     "/rest/v1/profiles?select=id,seq,username,email,role,sub_until,created_at,hwid&or=(username.ilike." + like + ",email.ilike." + like + ")&order=seq"
   );
+  all.sort((a, b) => (a.role === "ADMIN" ? 0 : 1) - (b.role === "ADMIN" ? 0 : 1) || (a.seq || 0) - (b.seq || 0));
   return res.status(200).json({ content: all.map(userRow), total: 1 });
 }
 
