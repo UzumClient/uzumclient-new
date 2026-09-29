@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/packs/:a", "destination": "/api/packs?a=:a" },
     { "source": "/api/users/auth/2fa/:a", "destination": "/api/auth?r=2fa&a=:a" },
     { "source": "/api/users/auth/:a", "destination": "/api/auth?a=:a" },
     { "source": "/api/users/actions/:a", "destination": "/api/key?a=:a" },
