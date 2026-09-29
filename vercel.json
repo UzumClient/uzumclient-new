@@ -47,5 +47,15 @@
     { "source": "/api/payments/promocodes/:a", "destination": "/api/pay?r=promocodes&a=:a" },
     { "source": "/api/payments/:a", "destination": "/api/pay?a=:a" },
     { "source": "/((?!api/|assets/|config\\.json|favicon\\.svg|icon\\.png|icon\\.svg).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+      ]
+    }
   ]
 }
