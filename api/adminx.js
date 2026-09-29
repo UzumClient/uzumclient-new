@@ -220,7 +220,7 @@ async function promosStatClear(q, res) {
 }
 
 module.exports = async (req, res) => {
-  const path = req.query.path || "";
+  const path = req.query.p || "";
   const q = req.query;
   const open = ["states/isSessionInitialized"];
   let me = null;
