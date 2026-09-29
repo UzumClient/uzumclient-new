@@ -153,11 +153,12 @@ async function keysRemove(q, res) {
 
 // ---------- promocodes ----------
 function promoRow(p) {
-  return { name: p.value, discount: p.discount || 0, activations: p.usages || 0, maxActivations: p.maxUsages != null ? p.maxUsages : "-" };
+  const used = p.maxUsages != null && p.outActive != null ? Math.max(0, p.maxUsages - p.outActive) : 0;
+  return { name: p.value, discount: p.discount || 0, activations: used, maxActivations: p.maxUsages != null ? p.maxUsages : "-" };
 }
 
 async function promosGetAll(res) {
-  const rows = await sb("/rest/v1/promos?select=value,discount,usages,maxUsages&order=value&limit=200");
+  const rows = await sb("/rest/v1/promos?select=value,discount,maxUsages,outActive&order=value&limit=200");
   const out = {};
   rows.forEach((p) => { out[p.value] = promoRow(p); });
   return res.status(200).json(out);
@@ -178,7 +179,6 @@ async function promosCreate(q, res) {
       value: q.promocode,
       discount: parseInt(q.bet, 10) || 0,
       maxUsages: q.maxUsages !== "" && q.maxUsages != null ? parseInt(q.maxUsages, 10) : null,
-      usages: 0,
       outActive: q.maxUsages !== "" && q.maxUsages != null ? parseInt(q.maxUsages, 10) : null,
     }),
   });
@@ -205,14 +205,20 @@ async function promosDelete(q, res) {
 
 async function promosResetUsages(q, res) {
   if (!q.promocode) return res.status(400).send("Xatolik.");
-  await sb("/rest/v1/promos?value=eq." + encodeURIComponent(q.promocode), { method: "PATCH", body: JSON.stringify({ usages: 0 }) });
+  const rows = await sb("/rest/v1/promos?select=maxUsages&value=eq." + encodeURIComponent(q.promocode));
+  if (!rows.length) return res.status(400).send("Promokod topilmadi.");
+  await sb("/rest/v1/promos?value=eq." + encodeURIComponent(q.promocode), {
+    method: "PATCH",
+    body: JSON.stringify({ outActive: rows[0].maxUsages }),
+  });
   return res.status(200).send(" Promokod statistikasi tiklandi.");
 }
 
 async function promosStatGet(q, res) {
-  const rows = await sb("/rest/v1/promos?select=value,usages,maxUsages&value=eq." + encodeURIComponent(q.promocode || ""));
-  const p = rows.length ? rows[0] : { usages: 0, maxUsages: null };
-  return res.status(200).json({ usages: p.usages || 0, maxUsages: p.maxUsages, payments: [] });
+  const rows = await sb("/rest/v1/promos?select=value,maxUsages,outActive&value=eq." + encodeURIComponent(q.promocode || ""));
+  const p = rows.length ? rows[0] : { maxUsages: null, outActive: null };
+  const used = p.maxUsages != null && p.outActive != null ? Math.max(0, p.maxUsages - p.outActive) : 0;
+  return res.status(200).json({ usages: used, maxUsages: p.maxUsages, payments: [] });
 }
 
 async function promosStatClear(q, res) {
