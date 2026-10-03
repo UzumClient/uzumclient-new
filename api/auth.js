@@ -129,6 +129,45 @@ async function resetPassword(req, res) {
   }
 }
 
+async function recoverySend(req, res) {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).send("Email kiritilmadi.");
+    const rows = await sb("/rest/v1/profiles?select=id&email=ilike." + encodeURIComponent(email));
+    if (!rows.length) return res.status(400).send("Bu email bilan akkount topilmadi.");
+    try {
+      await sb("/auth/v1/recover", { method: "POST", body: JSON.stringify({ email }) }, true);
+    } catch (e) {
+      return res.status(400).send("Kod yuborishda xatolik. Birozdan keyin urinib ko'ring.");
+    }
+    return res.status(200).send("Kod emailingizga yuborildi.");
+  } catch (e) {
+    return res.status(400).send("Xatolik.");
+  }
+}
+
+async function recoveryVerify(req, res) {
+  try {
+    const { email, code, newPassword } = req.query;
+    if (!email || !code || !newPassword) return res.status(400).send("Barcha maydonlarni to'ldiring.");
+    if (newPassword.length < 6) return res.status(400).send("Yangi parol kamida 6 belgidan iborat bo'lishi kerak!");
+    let v;
+    try {
+      v = await sb("/auth/v1/verify",
+        { method: "POST", body: JSON.stringify({ email, token: code, type: "recovery" }) }, true);
+    } catch (e) {
+      return res.status(400).send("Kod noto'g'ri yoki muddati o'tgan.");
+    }
+    const uid = v && v.user && v.user.id;
+    if (!uid) return res.status(400).send("Kod noto'g'ri yoki muddati o'tgan.");
+    await sb("/auth/v1/admin/users/" + uid, { method: "PUT", body: JSON.stringify({ password: newPassword }) });
+    await sb("/rest/v1/web_sessions?user_id=eq." + uid, { method: "DELETE" });
+    return res.status(200).send("Parol o'zgartirildi. Yangi parol bilan kiring.");
+  } catch (e) {
+    return res.status(400).send("Tiklashda xatolik.");
+  }
+}
+
 module.exports = async (req, res) => {
   const r = req.query.r || "";
   const a = req.query.a;
@@ -139,5 +178,7 @@ module.exports = async (req, res) => {
   if (a === "logout") return logout(req, res);
   if (a === "register") return register(req, res);
   if (a === "resetPassword") return resetPassword(req, res);
+  if (a === "recoverySend") return recoverySend(req, res);
+  if (a === "recoveryVerify") return recoveryVerify(req, res);
   return res.status(404).send("Not found.");
 };
