@@ -131,8 +131,18 @@ async function resetPassword(req, res) {
 
 async function recoverySend(req, res) {
   try {
-    const { email } = req.query;
+    let email = req.query.email;
     if (!email) return res.status(400).send("Email kiritilmadi.");
+    if (!email.includes("@")) {
+      try {
+        email = await sb("/rest/v1/rpc/login_email", { method: "POST", body: JSON.stringify({ p_login: email }) }, true);
+      } catch (e) {
+        return res.status(400).send("Bu nom bilan akkount topilmadi.");
+      }
+      if (typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).send("Bu nom bilan akkount topilmadi.");
+      }
+    }
     const rows = await sb("/rest/v1/profiles?select=id&email=ilike." + encodeURIComponent(email));
     if (!rows.length) return res.status(400).send("Bu email bilan akkount topilmadi.");
     try {
