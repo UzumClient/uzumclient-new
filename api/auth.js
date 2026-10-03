@@ -168,6 +168,38 @@ async function recoveryVerify(req, res) {
   }
 }
 
+async function recoveryLink(req, res) {
+  try {
+    const { th, at, newPassword } = req.query;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).send("Yangi parol kamida 6 belgidan iborat bo'lishi kerak!");
+    }
+    let uid = null;
+    if (th) {
+      try {
+        const v = await sb("/auth/v1/verify",
+          { method: "POST", body: JSON.stringify({ token_hash: th, type: "recovery" }) }, true);
+        uid = v && v.user && v.user.id;
+      } catch (e) { /* keyingi usul */ }
+    }
+    if (!uid && at) {
+      try {
+        const u = await sb("/auth/v1/user", {
+          method: "GET",
+          headers: { apikey: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + at },
+        });
+        uid = u && u.id;
+      } catch (e) { /* tugadi */ }
+    }
+    if (!uid) return res.status(400).send("Havola eskirgan yoki noto'g'ri. Qaytadan so'rang.");
+    await sb("/auth/v1/admin/users/" + uid, { method: "PUT", body: JSON.stringify({ password: newPassword }) });
+    await sb("/rest/v1/web_sessions?user_id=eq." + uid, { method: "DELETE" });
+    return res.status(200).send("Parol o'zgartirildi. Yangi parol bilan kiring.");
+  } catch (e) {
+    return res.status(400).send("Tiklashda xatolik.");
+  }
+}
+
 module.exports = async (req, res) => {
   const r = req.query.r || "";
   const a = req.query.a;
@@ -180,5 +212,6 @@ module.exports = async (req, res) => {
   if (a === "resetPassword") return resetPassword(req, res);
   if (a === "recoverySend") return recoverySend(req, res);
   if (a === "recoveryVerify") return recoveryVerify(req, res);
+  if (a === "recoveryLink") return recoveryLink(req, res);
   return res.status(404).send("Not found.");
 };

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="uz" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="/icon.png" />
+<title>Parolni tiklash — UZUM CLIENT</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(800px 400px at 50% -5%,#a855f722,transparent),#070a12;color:#eef1f8;font-family:Inter,system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.box{width:100%;max-width:400px;background:#121829;border:1px solid #ffffff14;border-radius:20px;padding:32px 28px;text-align:center}
+h1{font-size:22px;margin-bottom:6px}
+p{font-size:13px;color:#9aa3b8;margin-bottom:18px}
+input{width:100%;background:#070a12;border:1px solid #ffffff22;color:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:15px;font-family:inherit}
+input:focus{outline:none;border-color:#a855f7}
+button{width:100%;background:linear-gradient(90deg,#a855f7,#6d28d9);border:none;color:#fff;font-weight:800;padding:13px;border-radius:12px;cursor:pointer;font-size:15px}
+button:disabled{opacity:.5}
+.st{font-size:13px;margin-top:12px;min-height:20px}
+.ok{color:#22c55e}.err{color:#f87171}
+a{color:#c084fc;font-size:13px;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>Yangi parol</h1>
+<p>Emailingizdagi havola orqali keldingiz. Yangi parolni kiriting.</p>
+<input id="p1" type="password" placeholder="Yangi parol (min. 6 belgi)" />
+<input id="p2" type="password" placeholder="Parolni takrorlang" />
+<button id="go">Saqlash</button>
+<div id="st" class="st"></div>
+<p style="margin-top:14px"><a href="/sign-in">Kirishga qaytish</a></p>
+</div>
+<script>
+var API = location.origin + '/api';
+function qp(n){
+  var m = location.search.match(new RegExp('[?&]' + n + '=([^&]+)'));
+  if(m) return decodeURIComponent(m[1]);
+  var h = location.hash.match(new RegExp('[#&]' + n + '=([^&]+)'));
+  return h ? decodeURIComponent(h[1]) : '';
+}
+var TH = qp('token_hash') || qp('token') || qp('code');
+var AT = qp('access_token');
+var st = document.getElementById('st');
+if(!TH && !AT){
+  st.className = 'st err';
+  st.textContent = 'Havola topilmadi. Iltimos, emaildagi havolani bosing yoki qaytadan so\'rang.';
+}
+function b64(s){
+  var b = new TextEncoder().encode(s), r = '';
+  for(var i = 0; i < b.length; i++) r += String.fromCharCode(b[i]);
+  return btoa(r);
+}
+document.getElementById('go').onclick = async function(){
+  var a = document.getElementById('p1').value, b = document.getElementById('p2').value;
+  if(a.length < 6){ st.className = 'st err'; st.textContent = 'Parol kamida 6 belgidan iborat bo\'lsin.'; return; }
+  if(a !== b){ st.className = 'st err'; st.textContent = 'Parollar mos kelmadi.'; return; }
+  if(!TH && !AT){ st.className = 'st err'; st.textContent = 'Havola eskirgan. Qaytadan so\'rang.'; return; }
+  this.disabled = true;
+  st.className = 'st'; st.textContent = 'Saqlanmoqda...';
+  try{
+    var u = API + '/users/auth/recoveryLink?newPassword=' + encodeURIComponent(b64(a)) +
+      (TH ? '&th=' + encodeURIComponent(TH) : '') + (AT ? '&at=' + encodeURIComponent(AT) : '');
+    var r = await fetch(u, {method:'POST'});
+    var t = await r.text();
+    if(!r.ok) throw t;
+    st.className = 'st ok'; st.textContent = t;
+    setTimeout(function(){ location.href = '/sign-in'; }, 1500);
+  }catch(e){
+    st.className = 'st err'; st.textContent = (typeof e === 'string' ? e : 'Xatolik.');
+    document.getElementById('go').disabled = false;
+  }
+};
+</script>
+</body>
+</html>
