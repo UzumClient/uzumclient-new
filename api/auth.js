@@ -140,7 +140,7 @@ async function recoverySend(req, res) {
     } catch (e) {
       return res.status(400).send("Kod yuborishda xatolik. Birozdan keyin urinib ko'ring.");
     }
-    return res.status(200).send("Kod emailingizga yuborildi.");
+    return res.status(200).send("Havola emailingizga yuborildi.");
   } catch (e) {
     return res.status(400).send("Xatolik.");
   }
